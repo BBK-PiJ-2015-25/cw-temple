@@ -2,8 +2,18 @@ package student;
 
 import game.EscapeState;
 import game.ExplorationState;
+import game.NodeStatus;
+import game.Node;
+
+import java.util.*;
+
+// import java.util.Collection;
+// import java.util.Iterator;
 
 public class Explorer {
+
+    TreeNode treeRoot;
+    Map<Long, TreeNode> visitedNodes = new HashMap<Long, TreeNode>();
 
     /**
      * Explore the cavern, trying to find the orb in as few steps as possible.
@@ -36,9 +46,73 @@ public class Explorer {
      * @param state the information available at the current state
      */
     public void explore(ExplorationState state) {
-        
-        System.out.println("Current location: " + state.getCurrentLocation());
 
+        TreeNode treeRoot    = new TreeNode(state.getCurrentLocation(), state.getDistanceToTarget());
+        TreeNode currentNode = treeRoot;
+
+        this.treeRoot = treeRoot;
+
+        // @todo - Take into account the distance from target when deciding which node to move to.
+
+        while (state.getDistanceToTarget() > 0) {
+            // Get neighbours
+            Collection<NodeStatus> neighbours      = state.getNeighbours();
+            // Get iterators for the neighbours collection
+            Iterator<NodeStatus> neighbourIterator = neighbours.iterator();
+            // Get the existing branches on the currentNode
+            Map<Long, TreeNode> existingBranches   = currentNode.getBranches();
+
+            while (neighbourIterator.hasNext()) {
+                NodeStatus neighbour      = neighbourIterator.next();
+                boolean    alreadyVisited = this.visitedNodes.containsKey(neighbour.getId());
+
+                // If we have already been to the current branch...
+                if (existingBranches.containsKey(neighbour.getId()) || this.allNeighboursVisited(neighbours)) {                    
+                    // ...and we have been to all the neighbours then we should go to the parent
+                    if (this.allNeighboursVisited(neighbours)) {
+                        state.moveTo(currentNode.getParent().getId());
+                        currentNode = currentNode.getParent();
+                        break;
+                    } 
+                }
+
+                /**
+                 * If the current ID is not the parent and the node ID is not currently
+                 * in the list of visited nodes then move to that node. 
+                 */
+                if (currentNode.getParent() == null || currentNode.getParent().getId() != neighbour.getId() && !alreadyVisited) {
+
+                    // Turn neighbour into a TreeNode
+                    TreeNode branch = new TreeNode(neighbour.getId(), neighbour.getDistanceToTarget());
+                    // Add the current node as the parent
+                    branch.setParent(currentNode);
+                    // Add the neighbour as a branch of the currentNode
+                    currentNode.addBranch(neighbour.getId(), branch);
+                    // Move to the current neighbour
+                    state.moveTo(neighbour.getId());
+                    this.visitedNodes.put(neighbour.getId(), branch);
+                    // Make the currentNode the neighbour branch
+                    currentNode = branch;
+                    break;
+                }
+            }
+        }
+
+        return;
+    }
+
+    private boolean allNeighboursVisited(Collection<NodeStatus> neighbours) {
+        Iterator<NodeStatus> iterator = neighbours.iterator();
+
+        while (iterator.hasNext()) {
+            NodeStatus neighbour = iterator.next();
+
+            if (!this.visitedNodes.containsKey(neighbour.getId())) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -65,6 +139,8 @@ public class Explorer {
      * @param state the information available at the current state
      */
     public void escape(EscapeState state) {
-        //TODO: Escape from the cavern before time runs out
+        
+
+
     }
 }

@@ -32,7 +32,7 @@ public class OptionsPanel extends JPanel implements ActionListener {
     private JLabel timeRemainingLabel;        //Shows the amount of time we have left
     private JLabel scoreLabel;                //Shows coins multiplied by bonus factor
     private BufferedImage background;        //Background for options pane
-    private String BACKGROUND_PATH = "/Users/keith/CloudDocs/Courses/PiJ/BBK-PiJ-2015-16/cw-temple/res/info_texture.png";            //Location of background image
+    private String BACKGROUND_PATH = "/Users/davidjones/Dropbox/github/PiJ-coursework-four/res/info_texture.png";            //Location of background image
 
     /**
      * Constructor: an instance
