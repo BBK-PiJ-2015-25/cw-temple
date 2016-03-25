@@ -1,9 +1,13 @@
 package student;
 
+// @TODO - add actual package names
+
 import game.EscapeState;
 import game.ExplorationState;
 import game.NodeStatus;
 import game.Node;
+import game.Edge;
+import java.util.stream.*;
 
 import java.util.*;
 
@@ -47,16 +51,16 @@ public class Explorer {
      */
     public void explore(ExplorationState state) {
 
-        TreeNode treeRoot    = new TreeNode(state.getCurrentLocation(), state.getDistanceToTarget());
+        TreeNode treeRoot    = new TreeNode(state.getCurrentLocation());
         TreeNode currentNode = treeRoot;
 
         this.treeRoot = treeRoot;
+        int distance  = state.getDistanceToTarget();
 
-        // @todo - Take into account the distance from target when deciding which node to move to.
+        while (distance > 0) {
+            // Get neighbours ordered by their distance from the target
+            List<NodeStatus> neighbours = state.getNeighbours().stream().sorted((a, b) -> Integer.compare(a.getDistanceToTarget(), b.getDistanceToTarget())).collect(Collectors.toList());
 
-        while (state.getDistanceToTarget() > 0) {
-            // Get neighbours
-            Collection<NodeStatus> neighbours      = state.getNeighbours();
             // Get iterators for the neighbours collection
             Iterator<NodeStatus> neighbourIterator = neighbours.iterator();
             // Get the existing branches on the currentNode
@@ -81,9 +85,8 @@ public class Explorer {
                  * in the list of visited nodes then move to that node. 
                  */
                 if (currentNode.getParent() == null || currentNode.getParent().getId() != neighbour.getId() && !alreadyVisited) {
-
                     // Turn neighbour into a TreeNode
-                    TreeNode branch = new TreeNode(neighbour.getId(), neighbour.getDistanceToTarget());
+                    TreeNode branch = new TreeNode(neighbour.getId());
                     // Add the current node as the parent
                     branch.setParent(currentNode);
                     // Add the neighbour as a branch of the currentNode
@@ -93,6 +96,7 @@ public class Explorer {
                     this.visitedNodes.put(neighbour.getId(), branch);
                     // Make the currentNode the neighbour branch
                     currentNode = branch;
+                    distance    = neighbour.getDistanceToTarget();
                     break;
                 }
             }
@@ -139,8 +143,55 @@ public class Explorer {
      * @param state the information available at the current state
      */
     public void escape(EscapeState state) {
+
+        System.out.println("Escape!");
         
+        Node endingNode               = state.getExit();
+        TreeNode currentTreeNode      = new TreeNode(state.getCurrentNode().getId());
+        Map<Long, Node> recordedNodes = new HashMap<Long, Node>();
+        Node currentNode              = state.getCurrentNode();
 
+        while (currentNode.getId() != endingNode.getId()) {
+            Set<Node> neighbours              = currentNode.getNeighbours();
+            Iterator<Node> neighboursIterator = neighbours.iterator();
 
+            neighbours.stream().forEach(a -> System.out.println(a.getId()));
+
+            while (neighboursIterator.hasNext()) {
+                Node node = neighboursIterator.next();
+                boolean alreadyVisited = recordedNodes.containsKey(node.getId());
+
+                // @TODO THIS PART
+
+                // If we have already been to the current branch...
+                // if (existingBranches.containsKey(neighbour.getId()) || this.allNeighboursVisited(neighbours)) {                    
+                //     // ...and we have been to all the neighbours then we should go to the parent
+                //     if (this.allNeighboursVisited(neighbours)) {
+                //         state.moveTo(currentNode.getParent().getId());
+                //         currentNode = currentNode.getParent();
+                //         break;
+                //     } 
+                // }
+
+                /**
+                 * If the current node has not already been visited and
+                 * it is not the current parent node
+                 * then move to the node
+                 */
+                if (currentTreeNode.getParent() == null || currentTreeNode.getParent().getId() != node.getId() && !alreadyVisited) {
+                    TreeNode treeNode = new TreeNode(node.getId());
+
+                    treeNode.setParent(currentTreeNode);
+                    currentTreeNode.addBranch(node.getId(), treeNode);
+
+                    recordedNodes.put(node.getId(), node);
+
+                    currentNode = node;
+                    break;
+                }
+            }
+        }
+
+        System.out.println("Good");
     }
 }

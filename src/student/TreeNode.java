@@ -7,13 +7,11 @@ import java.util.*;
 public class TreeNode {
 
 	private long nodeId;
-	private int distanceToTarget;
 	private TreeNode parent;
 	private Map<Long, TreeNode> branches;
 
-	TreeNode (long nodeId, int distanceToTarget) {
+	TreeNode (long nodeId) {
 		this.nodeId 		  = nodeId;
-		this.distanceToTarget = distanceToTarget;
 		this.parent 		  = null;
 		this.branches 		  = new HashMap<Long, TreeNode>();
 	}
@@ -32,10 +30,6 @@ public class TreeNode {
 
 	public TreeNode getParent() {
 		return this.parent;		
-	}
-
-	public int getDistanceToTarget() {
-		return this.distanceToTarget;
 	}
 
 	public long getId() {
