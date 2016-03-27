@@ -7,6 +7,7 @@ import game.ExplorationState;
 import game.NodeStatus;
 import game.Node;
 import game.Edge;
+import game.Tile;
 import java.util.stream.*;
 
 import java.util.*;
@@ -203,7 +204,13 @@ public class Explorer {
         while (pathwayIterator.hasNext()) {
             Node next = pathwayIterator.next();
             state.moveTo(next);
-            // state.pickUpGold();
+
+            // Get the tile and check for gold
+            Tile tile = next.getTile();
+
+            if (tile.getGold() > 0) {
+                state.pickUpGold();
+            }
         }
 
         return;
