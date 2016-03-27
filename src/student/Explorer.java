@@ -16,8 +16,7 @@ import java.util.*;
 
 public class Explorer {
 
-    TreeNode treeRoot;
-    Map<Long, TreeNode> visitedNodes = new HashMap<Long, TreeNode>();
+    private TreeNode treeRoot;
 
     /**
      * Explore the cavern, trying to find the orb in as few steps as possible.
@@ -53,6 +52,7 @@ public class Explorer {
 
         TreeNode treeRoot    = new TreeNode(state.getCurrentLocation());
         TreeNode currentNode = treeRoot;
+        Map<Long, TreeNode> visitedNodes = new HashMap<Long, TreeNode>();
 
         this.treeRoot = treeRoot;
         int distance  = state.getDistanceToTarget();
@@ -68,12 +68,12 @@ public class Explorer {
 
             while (neighbourIterator.hasNext()) {
                 NodeStatus neighbour      = neighbourIterator.next();
-                boolean    alreadyVisited = this.visitedNodes.containsKey(neighbour.getId());
+                boolean    alreadyVisited = visitedNodes.containsKey(neighbour.getId());
 
                 // If we have already been to the current branch...
-                if (existingBranches.containsKey(neighbour.getId()) || this.allNeighboursVisited(neighbours)) {                    
+                if (existingBranches.containsKey(neighbour.getId()) || this.allNeighboursVisited(neighbours, visitedNodes)) {
                     // ...and we have been to all the neighbours then we should go to the parent
-                    if (this.allNeighboursVisited(neighbours)) {
+                    if (this.allNeighboursVisited(neighbours, visitedNodes)) {
                         state.moveTo(currentNode.getParent().getId());
                         currentNode = currentNode.getParent();
                         break;
@@ -93,7 +93,7 @@ public class Explorer {
                     currentNode.addBranch(neighbour.getId(), branch);
                     // Move to the current neighbour
                     state.moveTo(neighbour.getId());
-                    this.visitedNodes.put(neighbour.getId(), branch);
+                    visitedNodes.put(neighbour.getId(), branch);
                     // Make the currentNode the neighbour branch
                     currentNode = branch;
                     distance    = neighbour.getDistanceToTarget();
@@ -105,13 +105,13 @@ public class Explorer {
         return;
     }
 
-    private boolean allNeighboursVisited(Collection<NodeStatus> neighbours) {
+    private boolean allNeighboursVisited(Collection<NodeStatus> neighbours, Map<Long, TreeNode> visitedNodes) {
         Iterator<NodeStatus> iterator = neighbours.iterator();
 
         while (iterator.hasNext()) {
             NodeStatus neighbour = iterator.next();
 
-            if (!this.visitedNodes.containsKey(neighbour.getId())) {
+            if (!visitedNodes.containsKey(neighbour.getId())) {
                 return false;
             }
         }
@@ -143,55 +143,69 @@ public class Explorer {
      * @param state the information available at the current state
      */
     public void escape(EscapeState state) {
-
-        System.out.println("Escape!");
         
-        Node endingNode               = state.getExit();
-        TreeNode currentTreeNode      = new TreeNode(state.getCurrentNode().getId());
-        Map<Long, Node> recordedNodes = new HashMap<Long, Node>();
-        Node currentNode              = state.getCurrentNode();
+        Node endingNode       = state.getExit();
+        Node startingNode     = state.getCurrentNode();
+        boolean endingReached = false;
 
-        while (currentNode.getId() != endingNode.getId()) {
-            Set<Node> neighbours              = currentNode.getNeighbours();
-            Iterator<Node> neighboursIterator = neighbours.iterator();
+        LinkedList<Node> queue = new LinkedList<Node>();
+        Map<Long, EscapeNode> visited = new HashMap<Long, EscapeNode>();
 
-            neighbours.stream().forEach(a -> System.out.println(a.getId()));
+        queue.add(startingNode);
+        EscapeNode escapeNode = new EscapeNode(startingNode);
+        visited.put(startingNode.getId(), escapeNode);
 
-            while (neighboursIterator.hasNext()) {
-                Node node = neighboursIterator.next();
-                boolean alreadyVisited = recordedNodes.containsKey(node.getId());
+        // Try a breath first traversal to get the shortest path
+        // Need to track the nodes we have been too so we can construct the shortest path
+        while (!endingReached && !queue.isEmpty()) {
+            Node current = queue.poll();
 
-                // @TODO THIS PART
+            Set<Node> neighbours = current.getNeighbours();
+            Set<Node> unvisitedNeighbours = neighbours.stream().filter(w -> {
+                return !visited.containsKey(w.getId());
+            }).collect(Collectors.toSet());
 
-                // If we have already been to the current branch...
-                // if (existingBranches.containsKey(neighbour.getId()) || this.allNeighboursVisited(neighbours)) {                    
-                //     // ...and we have been to all the neighbours then we should go to the parent
-                //     if (this.allNeighboursVisited(neighbours)) {
-                //         state.moveTo(currentNode.getParent().getId());
-                //         currentNode = currentNode.getParent();
-                //         break;
-                //     } 
-                // }
+            Iterator<Node> unvisitedNeighboursIterator = unvisitedNeighbours.iterator();
 
-                /**
-                 * If the current node has not already been visited and
-                 * it is not the current parent node
-                 * then move to the node
-                 */
-                if (currentTreeNode.getParent() == null || currentTreeNode.getParent().getId() != node.getId() && !alreadyVisited) {
-                    TreeNode treeNode = new TreeNode(node.getId());
+            while (!endingReached && unvisitedNeighboursIterator.hasNext()) {
+                Node neighbour = unvisitedNeighboursIterator.next();
+                EscapeNode escapeNeighbour = new EscapeNode(neighbour, current);
+                visited.put(neighbour.getId(), escapeNeighbour);
 
-                    treeNode.setParent(currentTreeNode);
-                    currentTreeNode.addBranch(node.getId(), treeNode);
+                queue.add(neighbour);
 
-                    recordedNodes.put(node.getId(), node);
-
-                    currentNode = node;
-                    break;
+                if (neighbour.getId() == endingNode.getId()) {
+                    endingReached = true;
                 }
             }
         }
 
-        System.out.println("Good");
+        // Now loop through and build the path
+        List<Node> pathway = new ArrayList<Node>();
+        pathway.add(endingNode);
+        boolean pathwayComplete = false;
+        Node n = endingNode;
+
+        while (!pathwayComplete) {
+            Node previous = visited.get(n.getId()).getParent();
+
+            if (previous == null || previous.getId() == startingNode.getId()) {
+                pathwayComplete = true;
+            } else {
+                n = previous;
+                pathway.add(n);
+            }
+        }
+
+        Collections.reverse(pathway);
+        Iterator<Node> pathwayIterator = pathway.iterator();
+
+        while (pathwayIterator.hasNext()) {
+            Node next = pathwayIterator.next();
+            state.moveTo(next);
+            // state.pickUpGold();
+        }
+
+        return;
     }
 }
