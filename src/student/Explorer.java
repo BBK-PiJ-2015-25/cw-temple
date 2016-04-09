@@ -137,7 +137,6 @@ public class Explorer {
         Node endingNode       = state.getExit();
         Node startingNode     = state.getCurrentNode();
         boolean endingReached = false;
-        int totalTime         = state.getTimeRemaining();
 
         LinkedList<Node> queue = new LinkedList<Node>();
         Map<Long, EscapeNode> visited = new HashMap<Long, EscapeNode>();
@@ -150,7 +149,7 @@ public class Explorer {
          * Try a breath first traversal to get the shortest path
          * Need to track the nodes we have been too so we can construct the shortest path
          */
-        while (!endingReached && !queue.isEmpty()) {
+        while (!queue.isEmpty()) {
             Node current = queue.poll();
 
             Set<Node> neighbours = current.getNeighbours();
@@ -158,18 +157,13 @@ public class Explorer {
                 return !visited.containsKey(w.getId());
             }).collect(Collectors.toSet());
 
-            Iterator<Node> unvisitedNeighboursIterator = unvisitedNeighbours.iterator();
+            if (!unvisitedNeighbours.isEmpty()) {
+                unvisitedNeighbours.stream().forEach(neighbour -> {
+                    EscapeNode escapeNeighbour = new EscapeNode(neighbour, current);
+                    visited.put(neighbour.getId(), escapeNeighbour);
 
-            while (!endingReached && unvisitedNeighboursIterator.hasNext()) {
-                Node neighbour = unvisitedNeighboursIterator.next();
-                EscapeNode escapeNeighbour = new EscapeNode(neighbour, current);
-                visited.put(neighbour.getId(), escapeNeighbour);
-
-                queue.add(neighbour);
-
-                if (neighbour.getId() == endingNode.getId()) {
-                    endingReached = true;
-                }
+                    queue.add(neighbour);
+                });
             }
         }
 
@@ -178,6 +172,8 @@ public class Explorer {
         pathway.add(endingNode);
         boolean pathwayComplete = false;
         Node n = endingNode;
+
+        int totalTime    = state.getTimeRemaining();
 
         while (!pathwayComplete) {
             Node previous = visited.get(n.getId()).getParent();
