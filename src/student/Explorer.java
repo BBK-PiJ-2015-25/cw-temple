@@ -68,15 +68,12 @@ public class Explorer {
                 NodeStatus neighbour      = neighbourIterator.next();
                 boolean    alreadyVisited = visitedNodes.containsKey(neighbour.getId());
 
-                // If we have already been to the current branch...
-                if (existingBranches.containsKey(neighbour.getId()) || this.allNeighboursVisited(neighbours, visitedNodes)) {
-                    // ...and we have been to all the neighbours then we should go to the parent
-                    if (this.allNeighboursVisited(neighbours, visitedNodes)) {
-                        state.moveTo(currentNode.getParent().getId());
-                        currentNode = currentNode.getParent();
-                        break;
-                    } 
-                }
+                // If we have been to all the neighbours then we should go to the parent
+                if (this.allNeighboursVisited(neighbours, visitedNodes)) {
+                    state.moveTo(currentNode.getParent().getId());
+                    currentNode = currentNode.getParent();
+                    break;
+                } 
 
                 /**
                  * If the current ID is not the parent and the node ID is not currently
@@ -104,17 +101,12 @@ public class Explorer {
     }
 
     private boolean allNeighboursVisited(Collection<NodeStatus> neighbours, Map<Long, TreeNode> visitedNodes) {
-        Iterator<NodeStatus> iterator = neighbours.iterator();
+        
+        Collection<NodeStatus> notVisited = neighbours.stream().filter(x -> {
+            return !visitedNodes.containsKey(x.getId());
+        }).collect(Collectors.toList());
 
-        while (iterator.hasNext()) {
-            NodeStatus neighbour = iterator.next();
-
-            if (!visitedNodes.containsKey(neighbour.getId())) {
-                return false;
-            }
-        }
-
-        return true;
+        return notVisited.isEmpty();
     }
 
     /**
