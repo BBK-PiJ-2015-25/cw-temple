@@ -17,8 +17,6 @@ import java.util.*;
 
 public class Explorer {
 
-    private TreeNode treeRoot;
-
     /**
      * Explore the cavern, trying to find the orb in as few steps as possible.
      * Once you find the orb, you must return from the function in order to pick
@@ -55,7 +53,6 @@ public class Explorer {
         TreeNode currentNode = treeRoot;
         Map<Long, TreeNode> visitedNodes = new HashMap<Long, TreeNode>();
 
-        this.treeRoot = treeRoot;
         int distance  = state.getDistanceToTarget();
 
         while (distance > 0) {
@@ -148,6 +145,7 @@ public class Explorer {
         Node endingNode       = state.getExit();
         Node startingNode     = state.getCurrentNode();
         boolean endingReached = false;
+        int totalTime         = state.getTimeRemaining();
 
         LinkedList<Node> queue = new LinkedList<Node>();
         Map<Long, EscapeNode> visited = new HashMap<Long, EscapeNode>();
@@ -156,8 +154,10 @@ public class Explorer {
         EscapeNode escapeNode = new EscapeNode(startingNode);
         visited.put(startingNode.getId(), escapeNode);
 
-        // Try a breath first traversal to get the shortest path
-        // Need to track the nodes we have been too so we can construct the shortest path
+        /**
+         * Try a breath first traversal to get the shortest path
+         * Need to track the nodes we have been too so we can construct the shortest path
+         */
         while (!endingReached && !queue.isEmpty()) {
             Node current = queue.poll();
 
@@ -199,19 +199,19 @@ public class Explorer {
         }
 
         Collections.reverse(pathway);
-        Iterator<Node> pathwayIterator = pathway.iterator();
 
-        while (pathwayIterator.hasNext()) {
-            Node next = pathwayIterator.next();
-            state.moveTo(next);
+        /**
+         * Now we have the path to the exit we can move to each tile
+         * and return after as we know we will be on the exit node.
+         */
+        pathway.stream().forEach(x -> {
+            state.moveTo(x);
 
             // Get the tile and check for gold
-            Tile tile = next.getTile();
-
-            if (tile.getGold() > 0) {
+            if (x.getTile().getGold() > 0) {
                 state.pickUpGold();
             }
-        }
+        });
 
         return;
     }
