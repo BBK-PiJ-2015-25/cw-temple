@@ -8,12 +8,17 @@ import game.NodeStatus;
 import game.Node;
 import game.Edge;
 import game.Tile;
-import java.util.stream.*;
-
-import java.util.*;
-
-// import java.util.Collection;
-// import java.util.Iterator;
+import java.util.stream.Stream;
+import java.util.stream.Collectors;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Set;
+import java.util.List;
 
 public class Explorer {
 
@@ -153,9 +158,11 @@ public class Explorer {
             Node current = queue.poll();
 
             Set<Node> neighbours = current.getNeighbours();
-            Set<Node> unvisitedNeighbours = neighbours.stream().filter(w -> {
-                return !visited.containsKey(w.getId());
-            }).collect(Collectors.toSet());
+            Set<Node> unvisitedNeighbours = neighbours.stream()
+                .filter(w -> {
+                    return !visited.containsKey(w.getId());
+                })
+                .collect(Collectors.toSet());
 
             if (!unvisitedNeighbours.isEmpty()) {
                 unvisitedNeighbours.stream().forEach(neighbour -> {
@@ -167,13 +174,13 @@ public class Explorer {
             }
         }
 
-        // Now loop through and build the path
+        // Now loop through and build the the shortest path
         List<Node> pathway = new ArrayList<Node>();
         pathway.add(endingNode);
         boolean pathwayComplete = false;
         Node n = endingNode;
 
-        int totalTime    = state.getTimeRemaining();
+        int totalTime = state.getTimeRemaining();
 
         while (!pathwayComplete) {
             Node previous = visited.get(n.getId()).getParent();
