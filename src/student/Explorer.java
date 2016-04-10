@@ -22,6 +22,8 @@ import java.util.List;
 
 public class Explorer {
 
+    int timeSoFar = 0;
+
     /**
      * Explore the cavern, trying to find the orb in as few steps as possible.
      * Once you find the orb, you must return from the function in order to pick
@@ -141,7 +143,6 @@ public class Explorer {
         
         Node endingNode       = state.getExit();
         Node startingNode     = state.getCurrentNode();
-        boolean endingReached = false;
 
         LinkedList<Node> queue = new LinkedList<Node>();
         Map<Long, EscapeNode> visited = new HashMap<Long, EscapeNode>();
@@ -188,18 +189,44 @@ public class Explorer {
             if (previous == null || previous.getId() == startingNode.getId()) {
                 pathwayComplete = true;
             } else {
+                this.timeSoFar += n.getEdge(previous).length();
+
                 n = previous;
                 pathway.add(n);
             }
         }
 
-        Collections.reverse(pathway);
+        /**
+         * Now we have our shortest path we can expand the route to nearby nodes
+         * that have gold. We need to test against the time remaining to make sure
+         * we can always escape.
+         */
+        List<Node> pathwayMoreGold = new ArrayList<Node>();
+
+        for (Node next : pathway) {
+            pathwayMoreGold.add(next);
+
+            next.getNeighbours().stream()
+                .filter(x -> x.getTile().getGold() > 0 && !pathway.contains(x))
+                .forEach(y -> {
+
+                    int addedTime = y.getEdge(next).length() * 2;
+
+                    if (addedTime + timeSoFar < totalTime) {
+                        pathwayMoreGold.add(y);
+                        pathwayMoreGold.add(next);
+                        this.timeSoFar += addedTime;
+                    }
+                });
+        }
+
+        Collections.reverse(pathwayMoreGold);
 
         /**
          * Now we have the path to the exit we can move to each tile
          * and return after as we know we will be on the exit node.
          */
-        pathway.stream().forEach(x -> {
+        pathwayMoreGold.stream().forEach(x -> {
             state.moveTo(x);
 
             // Get the tile and check for gold
