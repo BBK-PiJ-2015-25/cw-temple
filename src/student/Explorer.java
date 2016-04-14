@@ -1,7 +1,5 @@
 package student;
 
-// @TODO - add actual package names
-
 import game.EscapeState;
 import game.ExplorationState;
 import game.NodeStatus;
